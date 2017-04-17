@@ -35,6 +35,13 @@ struct client_info
     char name[10];
 };
 
+struct clientdatabase
+{
+	char name[10];
+	char ip_address[15];
+	char port_num[10];
+};
+
 struct basic
 {
 	short int pkt_type;
@@ -58,6 +65,9 @@ void printPacket(struct basic *pkt,char *status,int no_of_bytes)
 struct database **ptr;
 struct database base;
 int size;
+
+struct clientdatabase **cli_ptr;
+int cli_size;
 
 int database_create(void)
 {
@@ -100,6 +110,62 @@ int database_create(void)
     fclose(fd);
 	return size;
 }
+int database_create_clientlist(void)
+{
+    int i,n,j,k;
+    char buf[50];
+	char ip_address[15];
+	char port_num[5];
+
+    int size;
+
+    /*Reading the password database and forming a linkedlist*/
+    FILE *fd = fopen("clientlist.txt","r");
+    if(fd == NULL)
+    {
+        perror("fopen");
+        return 0;
+    }
+    fgets(buf,sizeof(buf),fd);
+    cli_size = atoi(buf);
+    j = 0;
+    k = 0;
+    cli_ptr = (struct clientdatabase **)malloc(cli_size * sizeof(struct clientdatabase *));
+
+    for(i = 0;i<cli_size;i++)
+    {
+        cli_ptr[i] = (struct clientdatabase *)malloc(sizeof(struct clientdatabase));
+        if(cli_ptr[i] == NULL)
+        {
+            perror("malloc");
+            return 0;
+        }
+//		printf("%d....%d\n",cli_size,i);
+    }
+
+    while(fgets(buf,sizeof(buf),fd))
+    {
+	puts(buf);
+     for(i=0;buf[i] != ' ';i++);
+     strncpy(cli_ptr[j]->name,buf,i);
+//	 cli_ptr[j]->name[i+1] = '\0';
+     i++;
+     for(k=0;buf[i+k] != ' ';k++);
+     strncpy(cli_ptr[j]->ip_address,&buf[i],k);
+//	 ip_address[k] = '\0';
+	 i = i+k+1;
+     for(k=0;buf[i+k] != '\n';k++);
+     strncpy(cli_ptr[j++]->port_num,&buf[i],k);
+//	 port_num[k] = '\0';
+//	 cli_ptr[j]->ip_address = inet_addr(ip_address);
+//	 cli_ptr[j++]->port_num = atoi(port_num); 
+//	 printf("%s \n",ip_address);
+    }
+    fclose(fd);
+	for(i=0;i<cli_size;i++)
+		printf("%s %s %s\n",cli_ptr[i]->ip_address,cli_ptr[i]->name,cli_ptr[i]->port_num);
+    return size;
+}
 int main(int argc,char **argv)
 {
 	int udpSocket, nBytes;
@@ -116,16 +182,22 @@ int main(int argc,char **argv)
 	int fd,flag =0;
 
 /*Check for no.of arguments received*/
+#if 1
 	if(argc < 2)
 	{
 		printf("Usage : ./ser port_number ip_address\n");
 		return 0;
 	}
-	
+#endif	
 	size = database_create();
 	if(size == 0)
 		return 0;
+	
+	retval = database_create_clientlist();
+	if(size == 0)
+		return 0;
 		
+	
 	printf("%d=REG\t%d=REQ\t%d=CONF\t%d=REPLY\t%d=ERROR\t%d=ACK\r\n\n",REG,REQ,CONF,REPLY,ERROR,ACK);
 	
 		
@@ -160,11 +232,13 @@ int main(int argc,char **argv)
 	/*Initialize size variable to be used later on*/
 	addr_size = sizeof serverStorage;
 
+#if 0
 	if((fd = open("output.txt",O_CREAT|O_WRONLY)) < 0)
 	{
 		perror("open::file");
 		return 0;
 	}
+#endif
 
 	while(1){
 	if(flag)
@@ -250,14 +324,22 @@ int main(int argc,char **argv)
 				printPacket(&b,"received",nBytes);
 
 				#if 0
-				if(write(fd,b.data,strlen(b.data)) < 0)
+				for(i=0;i<cli_size;i++)
 				{
-					perror("write");
-					return 0;
+						printf("REPLY--------%d\n",i);
+					if(strncmp(b.data,cli_ptr[i]->name,10) == 0)
+					{
+               	 		b.pkt_type = REPLY;
+						strcpy(b.data,cli_ptr[i]->ip_address);
+						return 0;
+					}
 				}
+				if(i == cli_size)
+					b.pkt_type = ERROR;
 				#endif
+               	 		b.pkt_type = REPLY;
+						strcpy(b.data,cli_ptr[0]->ip_address);
 
-               	 b.pkt_type = REPLY;
 				 if((++index) == 5)
 				 {
 					 index = 1;
@@ -272,7 +354,7 @@ int main(int argc,char **argv)
 
 				printf("ACK packet sent\r\n");
 				printPacket(&b,"sent",sizeof(b));
-				
+				return 0;	
                	break;
                	
         default:printf("Frame received\r\n");

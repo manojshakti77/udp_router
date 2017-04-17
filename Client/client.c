@@ -131,12 +131,13 @@ int main(int argc,char **argv)
 	printf("Value of j is %d\r\n",j);
 	/*Generating vunarability*/
 	
-	alarm(MAX_SEC);
+//	alarm(MAX_SEC);
     flag = 0;
 	/*Receive message from server*/
     read_count = recvfrom(clientsfd,&b,sizeof(b),0,NULL, NULL);
 	flag = 1;
-    alarm(0);
+  //  alarm(0);
+#if 0
     /*Checking the status of recvfrom*/
 	if(read_count < 0)
     {
@@ -148,16 +149,18 @@ int main(int argc,char **argv)
 		printPacket(&b,"sent",sizeof(b));
 		continue;	
     }
+#endif
   	switch(b.pkt_type)
   	{
     case CONF : printf("Frame received\r\n");
 				printf("CONNECTION CONFIRMED\r\n");
 				printPacket(&b,"received",read_count);
 		
-				fgets(b.data,sizeof(b.data),fd);
+				//fgets(b.data,sizeof(b.data),fd);
 		  		seq_num = ((seq_num)^(0x01));
-        			b.pkt_type = REQ;
+        		b.pkt_type = REQ;
 		  		b.seq_num = seq_num;
+				strcpy(b.data,"DSTCLIENT4");
     			if((sendto(clientsfd,&b,sizeof(b),0,(struct sockaddr *)&server_addr,addr_size)) < 0)
 				{
 					perror("sendto::CONF");
@@ -176,8 +179,17 @@ int main(int argc,char **argv)
 				
 	case REPLY: printf("Frame Received\r\n");
 				printf("REPLY FROM SERVER\r\n");
-				printpacket(&b,"received",read_count);
-				printf("Exiting\r\n");
+				printPacket(&b,"received",read_count);
+				printf("Connecting to Router1\r\n");
+				server_addr.sin_family = AF_INET;
+   		 		server_addr.sin_port = htons(3001);
+    			server_addr.sin_addr.s_addr = inet_addr("127.0.0.6");
+    			memset(server_addr.sin_zero, '\0', sizeof server_addr.sin_zero);
+    			if((sendto(clientsfd,&b,sizeof(b),0,(struct sockaddr *)&server_addr,addr_size)) < 0)
+				{
+					perror("sendto::CONF");
+					return 0;
+				}
 				break;
 				
     case ACK: 	printf("Frame received\r\n");
