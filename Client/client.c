@@ -22,7 +22,7 @@
 #define MAX_SEC		3
 #define MAX_SIZE	200
 
-
+#if 0
 struct basic
 {
 	short int pkt_type;
@@ -31,16 +31,30 @@ struct basic
 	char name[MAX_SIZE];
 	char data[MAX_SIZE];
 };
+#endif
+
+struct basic{
+long sourceIP; 
+long destIP; 
+int sourcePort; 
+int destPort; 
+short pkt_type; 	//REG, REQ, DATA, CONF, REPLY, ERROR, ACK
+char clientname[MAX_SIZE]; //client’s username
+char data[MAX_SIZE];   // use more fields only if required
+};
+
+
 
 void printPacket(struct basic *pkt,char *status,int no_of_bytes)
 {
-	printf("no.of bytes %s is:%d\r\n",status,no_of_bytes);
-	printf("%s %-25s:%d\r\n",status,"packet type",pkt->pkt_type);
-	printf("%s %-25s:%d\r\n",status,"sequence no",pkt->seq_num);
-	printf("%s %-25s:%ld\r\n",status,"port number",pkt->port_no);
-	printf("%s %-25s:%s\r\n",status,"client name",pkt->name);
-	printf("%s %-25s:%s\r\n",status,"data",pkt->data);
-	printf("\r\n");
+    printf("no.of bytes %s is:%d\r\n",status,no_of_bytes);
+    printf("%s %-25s:%d\r\n",status,"packet type",pkt->pkt_type);
+//  printf("%s %-25s:%d\r\n",status,"sequence no",pkt->seq_num);
+    printf("%s %-25s:%d\r\n",status,"Souce port number",pkt->sourcePort);
+    printf("%s %-25s:%d\r\n",status,"Destination port number",pkt->destPort);
+    printf("%s %-25s:%s\r\n",status,"client name",pkt->clientname);
+    printf("%s %-25s:%s\r\n",status,"data",pkt->data);
+    printf("\r\n");
 }
 
 /*Global varaiable declaration*/
@@ -50,6 +64,7 @@ struct sockaddr_in server_addr;
 socklen_t addr_size;
 int clientsfd;
 
+#if 0
 void sig_handler(int num)
 {
     printf("Alarm handler\n");
@@ -62,7 +77,7 @@ void sig_handler(int num)
     flag = 0;
     return;
 }
-
+#endif
 
 int main(int argc,char **argv)
 {
@@ -71,6 +86,11 @@ int main(int argc,char **argv)
   	FILE *fd;
   	int seq_num = 0;
 	int retval;
+	struct basic rec;
+	char ip[15];
+	int port;
+	int i;
+    	
 	
 	if(argc < 3)
 	{
@@ -98,11 +118,14 @@ int main(int argc,char **argv)
 	addr_size = sizeof server_addr;
 
 
-	signal(SIGALRM,&sig_handler);
+//	signal(SIGALRM,&sig_handler);
 	b.pkt_type = REG;
-	b.seq_num = seq_num;
-	b.port_no = 3000;
-	strcpy(b.name,argv[3]);
+//	b.seq_num = seq_num;
+	b.sourceIP = inet_addr("127.0.0.10");
+	b.sourcePort = 40;
+	b.destIP = inet_addr(argv[2]);
+	b.destPort = atoi(argv[1]);
+	strcpy(b.clientname,argv[3]);
 	strcpy(b.data,argv[4]);
 
 	if((sendto(clientsfd,&b,sizeof(b),0,(struct sockaddr *)&server_addr,addr_size)) < 0)
@@ -113,7 +136,7 @@ int main(int argc,char **argv)
 	printf("REG packet sent\r\n");
 	printPacket(&b,"sent",sizeof(b));
 
-
+#if 0
 	/*Opening the default file*/
 	fd = fopen("input.txt","r");
 	
@@ -122,6 +145,7 @@ int main(int argc,char **argv)
 		perror("fopen");
 		return 0;
 	}
+#endif
 	
 	/*Client side vunarability*/
 	int j = 1;
@@ -134,7 +158,7 @@ int main(int argc,char **argv)
 //	alarm(MAX_SEC);
     flag = 0;
 	/*Receive message from server*/
-    read_count = recvfrom(clientsfd,&b,sizeof(b),0,NULL, NULL);
+    read_count = recvfrom(clientsfd,&rec,sizeof(rec),0,NULL, NULL);
 	flag = 1;
   //  alarm(0);
 #if 0
@@ -150,16 +174,16 @@ int main(int argc,char **argv)
 		continue;	
     }
 #endif
-  	switch(b.pkt_type)
+  	switch(rec.pkt_type)
   	{
     case CONF : printf("Frame received\r\n");
 				printf("CONNECTION CONFIRMED\r\n");
-				printPacket(&b,"received",read_count);
+				printPacket(&rec,"received",read_count);
 		
 				//fgets(b.data,sizeof(b.data),fd);
 		  		seq_num = ((seq_num)^(0x01));
         		b.pkt_type = REQ;
-		  		b.seq_num = seq_num;
+		  		//b.seq_num = seq_num;
 				strcpy(b.data,"DSTCLIENT3");
     			if((sendto(clientsfd,&b,sizeof(b),0,(struct sockaddr *)&server_addr,addr_size)) < 0)
 				{
@@ -173,17 +197,23 @@ int main(int argc,char **argv)
         		
     case ERROR: printf("Frame received\r\n");
 				printf("CONNECTION REJECTED\r\n");
-				printPacket(&b,"received",read_count);
+				printPacket(&rec,"received",read_count);
 				printf("Exiting\r\n");
 				return 0;
 				
 	case REPLY: printf("Frame Received\r\n");
 				printf("REPLY FROM SERVER\r\n");
-				printPacket(&b,"received",read_count);
-				printf("Connecting to Router1\r\n");
+				printPacket(&rec,"received",read_count);
+				for(i=0;rec.data[i] != ' ';i++);
+				//for(i=i+1;rec.data[i] != ' ';i++);
+				//memset(ip,'\0',sizeof(ip));
+				//strncpy(ip,rec.data,i);
+				//port = atoi(&rec.data[i+1]);
+				printf("Connecting to Router1.......%s\r\n",rec.data);
+				strcpy(b.data,rec.data);
 				server_addr.sin_family = AF_INET;
-   		 		server_addr.sin_port = htons(3001);
-    			server_addr.sin_addr.s_addr = inet_addr("127.0.0.6");
+   		 		server_addr.sin_port = htons(37);
+    			server_addr.sin_addr.s_addr = inet_addr("127.0.0.7");
     			memset(server_addr.sin_zero, '\0', sizeof server_addr.sin_zero);
     			if((sendto(clientsfd,&b,sizeof(b),0,(struct sockaddr *)&server_addr,addr_size)) < 0)
 				{
@@ -194,8 +224,9 @@ int main(int argc,char **argv)
 				
     case ACK: 	printf("Frame received\r\n");
 				printf("ACK FROM SERVER\n");
-				printPacket(&b,"received",read_count);
+				printPacket(&rec,"received",read_count);
 				
+#if 0
 				if(j == 3)
 				{
 					printf("Repeating the same packet for vunarability test\r\n");
@@ -223,6 +254,7 @@ int main(int argc,char **argv)
 				else
 					return 0;
         	 	break;
+#endif
         	 	
     default : printf("Frame received\r\n");
 				printf("Invalid packet\n");

@@ -42,13 +42,14 @@ struct clientdatabase
 	char port_num[10];
 };
 
-struct basic
-{
-	short int pkt_type;
-	short int seq_num;
-	long port_no;
-	char name[MAX_SIZE];
-	char data[MAX_SIZE];
+struct basic{
+long sourceIP; 
+long destIP; 
+int sourcePort; 
+int destPort; 
+short pkt_type; 	//REG, REQ, DATA, CONF, REPLY, ERROR, ACK
+char clientname[MAX_SIZE]; //client’s username
+char data[MAX_SIZE];   // use more fields only if required
 };
 
 
@@ -56,9 +57,9 @@ void printPacket(struct basic *pkt,char *status,int no_of_bytes)
 {
 	printf("no.of bytes %s is:%d\r\n",status,no_of_bytes);
 	printf("%s %-25s:%d\r\n",status,"packet type",pkt->pkt_type);
-	printf("%s %-25s:%d\r\n",status,"sequence no",pkt->seq_num);
-	printf("%s %-25s:%ld\r\n",status,"port number",pkt->port_no);
-	printf("%s %-25s:%s\r\n",status,"client name",pkt->name);
+	printf("%s %-25s:%d\r\n",status,"Souce port number",pkt->sourcePort);
+	printf("%s %-25s:%d\r\n",status,"Destination port number",pkt->destPort);
+	printf("%s %-25s:%s\r\n",status,"client name",pkt->clientname);
 	printf("%s %-25s:%s\r\n",status,"data",pkt->data);
 	printf("\r\n");
 }
@@ -111,63 +112,12 @@ int database_create(void)
     fclose(fd);
 	return size;
 }
-#if 0
-int database_create_clientlist(void)
-{
-    int i,n,j,k;
-    char buf[50];
-	char ip_address[15];
-	char port_num[5];
 
-    int size;
-
-    /*Reading the password database and forming a linkedlist*/
-    FILE *fd = fopen("clientlist.txt","r");
-    if(fd == NULL)
-    {
-        perror("fopen");
-        return 0;
-    }
-    fgets(buf,sizeof(buf),fd);
-    cli_size = atoi(buf);
-    j = 0;
-    k = 0;
-    cli_ptr = (struct clientdatabase **)malloc(cli_size * sizeof(struct clientdatabase *));
-
-    for(i = 0;i<cli_size;i++)
-    {
-        cli_ptr[i] = (struct clientdatabase *)malloc(sizeof(struct clientdatabase));
-        if(cli_ptr[i] == NULL)
-        {
-            perror("malloc");
-            return 0;
-        }
-//		printf("%d....%d\n",cli_size,i);
-    }
-
-    while(fgets(buf,sizeof(buf),fd))
-    {
-	 //mset(ptr[j]->name,'\0',10);
-	 puts(buf);
-     for(i=0;buf[i] != ' ';i++);
-     strncpy(cli_ptr[j]->name,buf,i);
-     i++;
-     for(k=0;buf[i+k] != ' ';k++);
-     strncpy(cli_ptr[j]->ip_address,&buf[i],k);
-	 i = i+k+1;
-     for(k=0;buf[i+k] != '\n';k++);
-     strncpy(cli_ptr[j++]->port_num,&buf[i],k);
-    }
-    fclose(fd);
-	for(i=0;i<cli_size;i++)
-		printf("%s %s %s\n",cli_ptr[i]->ip_address,cli_ptr[i]->name,cli_ptr[i]->port_num);
-    return size;
-}
-#endif
 int client_search(char *ptr,char *temp)
 {
     char name [20];
 	int i;
+	int j;
 	char buf[100];
 	/*Reading the password database and forming a linkedlist*/
     FILE *fd = fopen("clientlist.txt","r");
@@ -186,22 +136,15 @@ int client_search(char *ptr,char *temp)
      puts(buf);
      for(i=0;buf[i] != ' ';i++);
      strncpy(name,buf,i);
+     for(j=i+1;buf[j] != ' ';j++);
 	 if(!strcmp(name,ptr))
 	 {
-		printf("sending the data\n");
-		strncpy(temp,buf,sizeof(buf));
+		printf("sending the data");
+		strncpy(temp,&buf[i+1],(j-i));
+		puts(temp);
 		return ++i;
 	 }
 	 puts(name);
-#if 0
-     i++;
-     for(k=0;buf[i+k] != ' ';k++);
-     strncpy(cli_ptr[j]->ip_address,&buf[i],k);
-     i = i+k+1;
-     for(k=0;buf[i+k] != '\n';k++);
-     strncpy(cli_ptr[j++]->port_num,&buf[i],k);
-     memset(buf,'\0',sizeof(buf));
-#endif
     memset(buf,'\0',sizeof(buf));
     }
     fclose(fd);
@@ -215,13 +158,12 @@ int main(int argc,char **argv)
 	socklen_t addr_size, client_addr_size;
 	int i,j;
 	struct client_info client_info;//To store the client information once connection confirmed 
-	int seq_num = 1;
 	int index = 0;
 	struct basic b;
+	struct basic rec;
 	int retval;
 	int size;
 	int fd,flag =0;
-	FILE *f;
 	char buf[100];
 
 /*Check for no.of arguments received*/
@@ -235,18 +177,6 @@ int main(int argc,char **argv)
 	size = database_create();
 	if(size == 0)
 		return 0;
-#if 0
-	retval = database_create_clientlist();
-	if(size == 0)
-		return 0;
-		
-	FILE *f = fopen("clientlist.txt","r");
-    if(f == NULL)
-    {
-        perror("fopen");
-        return 0;
-    }	
-#endif
 	printf("%d=REG\t%d=REQ\t%d=CONF\t%d=REPLY\t%d=ERROR\t%d=ACK\r\n\n",REG,REQ,CONF,REPLY,ERROR,ACK);
 	
 		
@@ -276,7 +206,8 @@ int main(int argc,char **argv)
 	{
 		printf("Listening for connections\r\n\n\n");
 	}
-	
+	b.sourceIP = inet_addr(argv[1]);
+    b.sourcePort = atoi(argv[1]);
 
 	/*Initialize size variable to be used later on*/
 	addr_size = sizeof serverStorage;
@@ -290,15 +221,17 @@ int main(int argc,char **argv)
 #endif
 
 	while(1){
+#if 0
 	if(flag)
 	{
 	printf("value of j : %d\r\n",index);
 	printf("Expecting packet sequence : %d\r\n",!seq_num);
 	}
+#endif
 
     /* Try to receive any incoming UDP datagram. Address and port of 
       requesting client will be stored on serverStorage variable */
-    nBytes = recvfrom(udpSocket,&b,sizeof(b),0,(struct sockaddr *)&serverStorage, &addr_size);
+    nBytes = recvfrom(udpSocket,&rec,sizeof(rec),0,(struct sockaddr *)&serverStorage, &addr_size);
     
     /*Checkk for no.of bytes received*/
     if(nBytes < 0)
@@ -307,6 +240,7 @@ int main(int argc,char **argv)
 		continue;
 	}
 	
+#if 0
 	/*Check for the sequence number*/
 	if(seq_num == b.seq_num)
 	{
@@ -320,22 +254,22 @@ int main(int argc,char **argv)
 		continue;
 	}
 	seq_num = b.seq_num;
-
-     switch(b.pkt_type)
+#endif
+     switch(rec.pkt_type)
      {
         case REG:
 				printf("Regestration request packet received\r\n");
-				printf("----%s\n",b.data);
-				printPacket(&b,"received",nBytes);
+				//printf("----%s\n",b.data);
+				printPacket(&rec,"received",nBytes);
 				/*Logic for the AUTHENTICATION*/
                  for(i=0;i<size;i++)
                  {
-                   if(!strcmp(b.name,ptr[i]->name))
+                   if(!strcmp(rec.clientname,ptr[i]->name))
                    {
-                      if(!strcmp(ptr[i]->password,b.data))
+                      if(!strcmp(ptr[i]->password,rec.data))
                       {
-						client_info.port_no = b.port_no;
-						strcpy(client_info.name,b.name);
+						client_info.port_no = rec.sourcePort;
+						strcpy(client_info.name,rec.clientname);
                         b.pkt_type = CONF;
                         break;
                       }
@@ -343,6 +277,9 @@ int main(int argc,char **argv)
                  }
                  if(i == size)
                     b.pkt_type = ERROR;
+				    b.destIP = rec.sourceIP;
+				    b.destPort = rec.sourcePort;
+	
 					sendto(udpSocket,&b,sizeof(b),0,(struct sockaddr *)&serverStorage,addr_size);
 					printf("Response packet sent\r\n");
 					printPacket(&b,"sent",sizeof(b));
@@ -356,11 +293,11 @@ int main(int argc,char **argv)
 						return 0;
 					break;
 					 
-		case REQ:if((b.port_no == client_info.port_no) && (strcmp(b.name,client_info.name)))
+		case REQ:if((rec.sourcePort == client_info.port_no) && (strcmp(rec.clientname,client_info.name)))
 				 {
 					printf("Frame received\r\n");
 					printf("Authentication error\r\n");
-					printPacket(&b,"received",nBytes);
+					printPacket(&rec,"received",nBytes);
 					b.pkt_type = ERROR;
     		   		sendto(udpSocket,&b,sizeof(b),0,(struct sockaddr *)&serverStorage,addr_size);
     		   		printf("Response packet sent\r\n");
@@ -370,15 +307,15 @@ int main(int argc,char **argv)
 	
 				printf("Frame received\r\n");
 				printf("Data frame\r\n");
-				printPacket(&b,"received",nBytes);
+				printPacket(&rec,"received",nBytes);
 
-				retval = client_search(b.data,buf);
+				retval = client_search(rec.data,buf);
 				if(retval == 0)
 					b.pkt_type = ERROR;
 				else
 				{
                	 	b.pkt_type = REPLY;
-					strcpy(b.data,&buf[i]);
+					strcpy(b.data,buf);
 					puts(b.data);
 				}
 				#if 0
@@ -393,7 +330,6 @@ int main(int argc,char **argv)
 					}
 				}
 				if(i == cli_size)
-				#endif
                	 //		b.pkt_type = REPLY;
 				//		strcpy(b.data,cli_ptr[0]->ip_address);
 
@@ -402,6 +338,7 @@ int main(int argc,char **argv)
 					 index = 1;
 					 continue;
 				 }
+				#endif
     		   	 if(sendto(udpSocket,&b,sizeof(b),0,(struct sockaddr *)&serverStorage,addr_size) < 0)
 				 {
 				 	perror("sendto::REQ");
@@ -409,14 +346,14 @@ int main(int argc,char **argv)
 					return 0;
 				 }
 
-				printf("ACK packet sent\r\n");
+				//printf("ACK packet sent\r\n");
 				printPacket(&b,"sent",sizeof(b));
 				return 0;	
                	break;
                	
         default:printf("Frame received\r\n");
 				printf("Unknown\n");
-				printPacket(&b,"received",nBytes);
+				printPacket(&rec,"received",nBytes);
                 break;
      }
   }
