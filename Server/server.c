@@ -51,6 +51,7 @@ struct basic
 	char data[MAX_SIZE];
 };
 
+
 void printPacket(struct basic *pkt,char *status,int no_of_bytes)
 {
 	printf("no.of bytes %s is:%d\r\n",status,no_of_bytes);
@@ -110,6 +111,7 @@ int database_create(void)
     fclose(fd);
 	return size;
 }
+#if 0
 int database_create_clientlist(void)
 {
     int i,n,j,k;
@@ -145,26 +147,65 @@ int database_create_clientlist(void)
 
     while(fgets(buf,sizeof(buf),fd))
     {
-	puts(buf);
+	 //mset(ptr[j]->name,'\0',10);
+	 puts(buf);
      for(i=0;buf[i] != ' ';i++);
      strncpy(cli_ptr[j]->name,buf,i);
-//	 cli_ptr[j]->name[i+1] = '\0';
      i++;
      for(k=0;buf[i+k] != ' ';k++);
      strncpy(cli_ptr[j]->ip_address,&buf[i],k);
-//	 ip_address[k] = '\0';
 	 i = i+k+1;
      for(k=0;buf[i+k] != '\n';k++);
      strncpy(cli_ptr[j++]->port_num,&buf[i],k);
-//	 port_num[k] = '\0';
-//	 cli_ptr[j]->ip_address = inet_addr(ip_address);
-//	 cli_ptr[j++]->port_num = atoi(port_num); 
-//	 printf("%s \n",ip_address);
     }
     fclose(fd);
 	for(i=0;i<cli_size;i++)
 		printf("%s %s %s\n",cli_ptr[i]->ip_address,cli_ptr[i]->name,cli_ptr[i]->port_num);
     return size;
+}
+#endif
+int client_search(char *ptr,char *temp)
+{
+    char name [20];
+	int i;
+	char buf[100];
+	/*Reading the password database and forming a linkedlist*/
+    FILE *fd = fopen("clientlist.txt","r");
+    if(fd == NULL)
+    {
+        perror("fopen");
+        return 0;
+    }
+	printf("...%ld\n",sizeof(buf));
+    memset(buf,'\0',sizeof(buf));
+
+	while(fgets(buf,sizeof(buf),fd))
+    {
+     memset(name,'\0',sizeof(name));
+	 printf("-------");
+     puts(buf);
+     for(i=0;buf[i] != ' ';i++);
+     strncpy(name,buf,i);
+	 if(!strcmp(name,ptr))
+	 {
+		printf("sending the data\n");
+		strncpy(temp,buf,sizeof(buf));
+		return ++i;
+	 }
+	 puts(name);
+#if 0
+     i++;
+     for(k=0;buf[i+k] != ' ';k++);
+     strncpy(cli_ptr[j]->ip_address,&buf[i],k);
+     i = i+k+1;
+     for(k=0;buf[i+k] != '\n';k++);
+     strncpy(cli_ptr[j++]->port_num,&buf[i],k);
+     memset(buf,'\0',sizeof(buf));
+#endif
+    memset(buf,'\0',sizeof(buf));
+    }
+    fclose(fd);
+	return 0;
 }
 int main(int argc,char **argv)
 {
@@ -180,6 +221,8 @@ int main(int argc,char **argv)
 	int retval;
 	int size;
 	int fd,flag =0;
+	FILE *f;
+	char buf[100];
 
 /*Check for no.of arguments received*/
 #if 1
@@ -192,12 +235,18 @@ int main(int argc,char **argv)
 	size = database_create();
 	if(size == 0)
 		return 0;
-	
+#if 0
 	retval = database_create_clientlist();
 	if(size == 0)
 		return 0;
 		
-	
+	FILE *f = fopen("clientlist.txt","r");
+    if(f == NULL)
+    {
+        perror("fopen");
+        return 0;
+    }	
+#endif
 	printf("%d=REG\t%d=REQ\t%d=CONF\t%d=REPLY\t%d=ERROR\t%d=ACK\r\n\n",REG,REQ,CONF,REPLY,ERROR,ACK);
 	
 		
@@ -323,22 +372,30 @@ int main(int argc,char **argv)
 				printf("Data frame\r\n");
 				printPacket(&b,"received",nBytes);
 
+				retval = client_search(b.data,buf);
+				if(retval == 0)
+					b.pkt_type = ERROR;
+				else
+				{
+               	 	b.pkt_type = REPLY;
+					strcpy(b.data,&buf[i]);
+					puts(b.data);
+				}
 				#if 0
 				for(i=0;i<cli_size;i++)
 				{
-						printf("REPLY--------%d\n",i);
-					if(strncmp(b.data,cli_ptr[i]->name,10) == 0)
+					retval =strcmp(b.data,cli_ptr[i]->name);
+					printf("REPLY--------%d...%s...%s.....%d\n",i,b.data,cli_ptr[i]->name,retval);
+					if(retval == 0)
 					{
-               	 		b.pkt_type = REPLY;
 						strcpy(b.data,cli_ptr[i]->ip_address);
 						return 0;
 					}
 				}
 				if(i == cli_size)
-					b.pkt_type = ERROR;
 				#endif
-               	 		b.pkt_type = REPLY;
-						strcpy(b.data,cli_ptr[0]->ip_address);
+               	 //		b.pkt_type = REPLY;
+				//		strcpy(b.data,cli_ptr[0]->ip_address);
 
 				 if((++index) == 5)
 				 {

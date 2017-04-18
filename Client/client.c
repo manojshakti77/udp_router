@@ -160,7 +160,7 @@ int main(int argc,char **argv)
 		  		seq_num = ((seq_num)^(0x01));
         		b.pkt_type = REQ;
 		  		b.seq_num = seq_num;
-				strcpy(b.data,"DSTCLIENT4");
+				strcpy(b.data,"DSTCLIENT3");
     			if((sendto(clientsfd,&b,sizeof(b),0,(struct sockaddr *)&server_addr,addr_size)) < 0)
 				{
 					perror("sendto::CONF");
