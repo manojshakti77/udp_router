@@ -318,27 +318,6 @@ int main(int argc,char **argv)
 					strcpy(b.data,buf);
 					puts(b.data);
 				}
-				#if 0
-				for(i=0;i<cli_size;i++)
-				{
-					retval =strcmp(b.data,cli_ptr[i]->name);
-					printf("REPLY--------%d...%s...%s.....%d\n",i,b.data,cli_ptr[i]->name,retval);
-					if(retval == 0)
-					{
-						strcpy(b.data,cli_ptr[i]->ip_address);
-						return 0;
-					}
-				}
-				if(i == cli_size)
-               	 //		b.pkt_type = REPLY;
-				//		strcpy(b.data,cli_ptr[0]->ip_address);
-
-				 if((++index) == 5)
-				 {
-					 index = 1;
-					 continue;
-				 }
-				#endif
     		   	 if(sendto(udpSocket,&b,sizeof(b),0,(struct sockaddr *)&serverStorage,addr_size) < 0)
 				 {
 				 	perror("sendto::REQ");
@@ -346,7 +325,6 @@ int main(int argc,char **argv)
 					return 0;
 				 }
 
-				//printf("ACK packet sent\r\n");
 				printPacket(&b,"sent",sizeof(b));
 				return 0;	
                	break;

@@ -59,7 +59,6 @@ void printPacket(struct basic *pkt,char *status,int no_of_bytes)
 
 /*Global varaiable declaration*/
 struct basic b;
-int flag;
 struct sockaddr_in server_addr;
 socklen_t addr_size;
 int clientsfd;
@@ -90,6 +89,7 @@ int main(int argc,char **argv)
 	char ip[15];
 	int port;
 	int i;
+	int flag = 1;
     	
 	
 	if(argc < 3)
@@ -136,7 +136,7 @@ int main(int argc,char **argv)
 	printf("REG packet sent\r\n");
 	printPacket(&b,"sent",sizeof(b));
 
-#if 0
+#if 1
 	/*Opening the default file*/
 	fd = fopen("input.txt","r");
 	
@@ -156,10 +156,10 @@ int main(int argc,char **argv)
 	/*Generating vunarability*/
 	
 //	alarm(MAX_SEC);
-    flag = 0;
+ // flag = 0;
 	/*Receive message from server*/
     read_count = recvfrom(clientsfd,&rec,sizeof(rec),0,NULL, NULL);
-	flag = 1;
+//lag = 1;
   //  alarm(0);
 #if 0
     /*Checking the status of recvfrom*/
@@ -184,7 +184,7 @@ int main(int argc,char **argv)
 		  		seq_num = ((seq_num)^(0x01));
         		b.pkt_type = REQ;
 		  		//b.seq_num = seq_num;
-				strcpy(b.data,"DSTCLIENT3");
+				strcpy(b.data,"DSTCLIENT6");
     			if((sendto(clientsfd,&b,sizeof(b),0,(struct sockaddr *)&server_addr,addr_size)) < 0)
 				{
 					perror("sendto::CONF");
@@ -225,7 +225,19 @@ int main(int argc,char **argv)
     case ACK: 	printf("Frame received\r\n");
 				printf("ACK FROM SERVER\n");
 				printPacket(&rec,"received",read_count);
-				
+				memset(b.data,'\0',sizeof(b.data));
+				if(!(fgets(b.data,sizeof(b.data),fd)))
+				{
+					printf("File Transferred\n");
+					return 0;
+				}
+				if((sendto(clientsfd,&b,sizeof(b),0,(struct sockaddr *)&server_addr,addr_size)) < 0)
+                {
+                    perror("sendto::CONF");
+                    return 0;
+                }
+				printPacket(&rec,"Sent",read_count);
+				flag = 0;
 #if 0
 				if(j == 3)
 				{

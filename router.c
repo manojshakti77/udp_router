@@ -51,8 +51,8 @@ int main(){
 
   /*Configure settings in address struct*/
   serverAddr.sin_family = AF_INET;
-  serverAddr.sin_port = htons(33);
-  serverAddr.sin_addr.s_addr = inet_addr("127.0.0.3");
+  serverAddr.sin_port = htons(36);
+  serverAddr.sin_addr.s_addr = inet_addr("127.0.0.6");
   memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);  
 
   /*Bind socket with address struct*/
@@ -76,7 +76,7 @@ int main(){
 	strcpy(b.data,"MANOJPRASANTHI\n");
     /*Send uppercase message back to client, using serverStorage as the address*/
     sendto(udpSocket,&b,sizeof(b),0,(struct sockaddr *)&serverStorage,addr_size);
-	printPacket(&b,"sent",nBytes);
+	//printPacket(&b,"sent",nBytes);
 	printf("Sent Reply\n");
 	}
 
