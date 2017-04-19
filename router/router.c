@@ -43,7 +43,7 @@ void printPacket(struct basic *pkt,char *status,int no_of_bytes)
     printf("%s %-25s:%s\r\n",status,"data",pkt->data);
     printf("\r\n");
 }
-int main(){
+int main(int argc,char **argv){
   int udpSocket, nBytes;
   char buffer[1024];
   struct sockaddr_in serverAddr, clientAddr;
@@ -60,6 +60,12 @@ int main(){
 	int flag = 0;
     int size;
 
+	if(argc < 4)
+	{
+		printf("Usage : ./a.out router_port other_router_ip other_router_port\n");
+		return 0;
+	}
+	printf("Rouer IP....127.0.0.7\n");
     /*Reading the password database and forming a linkedlist*/
     FILE *fd = fopen("neighbour.txt","r");
     if(fd == NULL)
@@ -104,7 +110,7 @@ int main(){
 
   /*Configure settings in address struct*/
   serverAddr.sin_family = AF_INET;
-  serverAddr.sin_port = htons(37);
+  serverAddr.sin_port = htons(atoi(argv[1]));
   serverAddr.sin_addr.s_addr = inet_addr("127.0.0.7");
   memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);  
 
@@ -132,10 +138,10 @@ int main(){
 	
 if(flag == 0)
 {
-	ip = inet_addr(b.data);
+//	ip = inet_addr(b.data);
 	for(i=0;i<size;i++)
 	{
-	if(ip == ptr[i]->ip_address)
+	if(b.destIP == ptr[i]->ip_address)
 		{
 			printf("Resolved\n");
 			break;
@@ -144,14 +150,14 @@ if(flag == 0)
 	if(i == size)
 	{
 		printf("Not found passing to router2...\n");
-    	clientAddr.sin_port = htons(39);
-    	clientAddr.sin_addr.s_addr = inet_addr("127.0.0.9");
+    	clientAddr.sin_port = htons(atoi(argv[3]));
+    	clientAddr.sin_addr.s_addr = inet_addr(argv[2]);
 	}
 	else
 	{
 	printf("%d====\n",i);
-    clientAddr.sin_port = htons(ptr[i]->port_num);
-    clientAddr.sin_addr.s_addr = ip;
+    clientAddr.sin_port = htons(b.destPort);
+    clientAddr.sin_addr.s_addr = b.destIP;
 	}
 	flag = 1;
 }

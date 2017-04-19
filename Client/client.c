@@ -92,9 +92,10 @@ int main(int argc,char **argv)
 	int flag = 1;
     	
 	
-	if(argc < 3)
+	if(argc < 10)
 	{
 		printf("Usage : ./cli port_number ip_address username password\n");
+		printf("Usage : ./cli clPort serIP serPort username passwd routerIP routerPort destclientname destPort \n");
 		return 0;
 	}
   	/*Create UDP socket*/
@@ -110,7 +111,7 @@ int main(int argc,char **argv)
 	
 	/*Configure settings in address struct*/
 	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(atoi(argv[1]));
+	server_addr.sin_port = htons(atoi(argv[3]));
 	server_addr.sin_addr.s_addr = inet_addr(argv[2]);
 	memset(server_addr.sin_zero, '\0', sizeof server_addr.sin_zero);  
 
@@ -122,11 +123,11 @@ int main(int argc,char **argv)
 	b.pkt_type = REG;
 //	b.seq_num = seq_num;
 	b.sourceIP = inet_addr("127.0.0.10");
-	b.sourcePort = 40;
+	b.sourcePort = atoi(argv[1]);
 	b.destIP = inet_addr(argv[2]);
-	b.destPort = atoi(argv[1]);
-	strcpy(b.clientname,argv[3]);
-	strcpy(b.data,argv[4]);
+	b.destPort = atoi(argv[3]);
+	strcpy(b.clientname,argv[4]);
+	strcpy(b.data,argv[5]);
 
 	if((sendto(clientsfd,&b,sizeof(b),0,(struct sockaddr *)&server_addr,addr_size)) < 0)
 	{
@@ -184,7 +185,7 @@ int main(int argc,char **argv)
 		  		seq_num = ((seq_num)^(0x01));
         		b.pkt_type = REQ;
 		  		//b.seq_num = seq_num;
-				strcpy(b.data,"DSTCLIENT6");
+				strcpy(b.data,argv[8]);
     			if((sendto(clientsfd,&b,sizeof(b),0,(struct sockaddr *)&server_addr,addr_size)) < 0)
 				{
 					perror("sendto::CONF");
@@ -209,11 +210,13 @@ int main(int argc,char **argv)
 				//memset(ip,'\0',sizeof(ip));
 				//strncpy(ip,rec.data,i);
 				//port = atoi(&rec.data[i+1]);
+				b.destPort = atoi(argv[9]);
+				b.destIP = inet_addr(rec.data);
 				printf("Connecting to Router1.......%s\r\n",rec.data);
-				strcpy(b.data,rec.data);
+				//strcpy(b.data,rec.data);
 				server_addr.sin_family = AF_INET;
-   		 		server_addr.sin_port = htons(37);
-    			server_addr.sin_addr.s_addr = inet_addr("127.0.0.7");
+   		 		server_addr.sin_port = htons(atoi(argv[7]));
+    			server_addr.sin_addr.s_addr = inet_addr(argv[6]);
     			memset(server_addr.sin_zero, '\0', sizeof server_addr.sin_zero);
     			if((sendto(clientsfd,&b,sizeof(b),0,(struct sockaddr *)&server_addr,addr_size)) < 0)
 				{

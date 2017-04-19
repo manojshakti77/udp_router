@@ -37,7 +37,7 @@ void printPacket(struct basic *pkt,char *status,int no_of_bytes)
     printf("\r\n");
 }
 
-int main(){
+int main(int argc,char **argv){
   int udpSocket, nBytes;
   char buffer[1024];
   struct sockaddr_in serverAddr, clientAddr;
@@ -45,14 +45,19 @@ int main(){
   socklen_t addr_size, client_addr_size;
   int i;
   struct basic b;
+  if(argc < 3)
+  {
+	printf("Usage:./a.out ip_address port\n");
+	return 0;
+  }
 
   /*Create UDP socket*/
   udpSocket = socket(PF_INET, SOCK_DGRAM, 0);
 
   /*Configure settings in address struct*/
   serverAddr.sin_family = AF_INET;
-  serverAddr.sin_port = htons(36);
-  serverAddr.sin_addr.s_addr = inet_addr("127.0.0.6");
+  serverAddr.sin_port = htons(atoi(argv[2]));
+  serverAddr.sin_addr.s_addr = inet_addr(argv[1]);
   memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);  
 
   /*Bind socket with address struct*/
