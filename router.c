@@ -71,18 +71,14 @@ int main(int argc,char **argv){
       requesting client will be stored on serverStorage variable */
     nBytes = recvfrom(udpSocket,&b,sizeof(b),0,(struct sockaddr *)&serverStorage, &addr_size);
 	printPacket(&b,"received",nBytes);
-#if 0
-    /*Convert message received to uppercase*/
-    for(i=0;i<nBytes-1;i++)
-      buffer[i] = toupper(buffer[i]);
+#if 1
 
-#endif
 	b.pkt_type = 0x06;
-	strcpy(b.data,"MANOJPRASANTHI\n");
+	memset(b.data,'\0',sizeof(b.data));
     /*Send uppercase message back to client, using serverStorage as the address*/
     sendto(udpSocket,&b,sizeof(b),0,(struct sockaddr *)&serverStorage,addr_size);
-	//printPacket(&b,"sent",nBytes);
-	printf("Sent Reply\n");
+	printPacket(&b,"sent",nBytes);
+#endif
 	}
 
   return 0;

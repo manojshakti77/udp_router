@@ -19,7 +19,7 @@
 #define ERROR	0x05
 #define ACK		0X06
 
-#define TIME		4
+#define MAX_SEC		3
 #define MAX_SIZE	200
 
 struct basic{
@@ -143,13 +143,10 @@ int main(int argc,char **argv)
 				for(i=0;rec.data[i] != ' ';i++);
 				b.destPort = atoi(argv[9]);
 				b.destIP = inet_addr(rec.data);
+				goto router;
+#if 0
 				printf("Connecting to Router.......%s\r\n",argv[6]);
 				strcpy(b.clientname,argv[8]);
-				if(!(fgets(b.data,sizeof(b.data),fd)))
-                {
-                    perror("fgets");
-                    return 0;
-                }
 				server_addr.sin_family = AF_INET;
    		 		server_addr.sin_port = htons(atoi(argv[7]));
     			server_addr.sin_addr.s_addr = inet_addr(argv[6]);
@@ -160,24 +157,27 @@ int main(int argc,char **argv)
 					perror("sendto::CONF");
 					return 0;
 				}
+#endif
 				break;
 				
     case ACK: 	printf("Frame received\r\n");
 				printf("ACK FROM SERVER\n");
 				printPacket(&rec,"received",read_count);
+#if 0
 				memset(b.data,'\0',sizeof(b.data));
 				if(!(fgets(b.data,sizeof(b.data),fd)))
 				{
 					printf("File Transferred\n");
 					return 0;
 				}
-				sleep(TIME);
 				if((sendto(clientsfd,&b,sizeof(b),0,(struct sockaddr *)&server_addr,addr_size)) < 0)
                 {
                     perror("sendto::CONF");
                     return 0;
                 }
 				printPacket(&b,"Sent",sizeof(b));
+				sleep(4);
+#endif
         	 	break;
         	 	
     default :   printf("Frame received\r\n");
@@ -186,5 +186,26 @@ int main(int argc,char **argv)
 				break;
 		}
 	}
-  return 0;
+router:
+	printf("Connecting to Router.......%s\r\n",argv[6]);
+    strcpy(b.clientname,argv[8]);
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(atoi(argv[7]));
+    server_addr.sin_addr.s_addr = inet_addr(argv[6]);
+    memset(server_addr.sin_zero, '\0', sizeof server_addr.sin_zero);
+    memset(b.data,'\0',sizeof(b.data));
+    while(fgets(b.data,sizeof(b.data),fd))
+    {
+        if((sendto(clientsfd,&b,sizeof(b),0,(struct sockaddr *)&server_addr,addr_size)) < 0)
+        {
+            perror("sendto");
+		 	return 0;
+        }
+    	printPacket(&b,"sent",sizeof(b));
+        perror("sendto::CONF");
+		memset(b.data,'\0',sizeof(b.data));
+		sleep(4);
+    }
+	printf("File Transferred\n");
+    return 0;
 }

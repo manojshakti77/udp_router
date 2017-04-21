@@ -6,12 +6,12 @@
 #include<arpa/inet.h>
 #include<ctype.h>
 #include<unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include<sys/types.h>
+#include<sys/stat.h>
+#include<fcntl.h>
+#include<sys/types.h>
+#include<sys/stat.h>
+#include<fcntl.h>
 
 
 #define REG		0x01
@@ -126,13 +126,10 @@ int client_search(char *ptr,char *temp)
         perror("fopen");
         return 0;
     }
-	printf("...%ld\n",sizeof(buf));
     memset(buf,'\0',sizeof(buf));
-
 	while(fgets(buf,sizeof(buf),fd))
     {
      memset(name,'\0',sizeof(name));
-	 printf("-------");
      puts(buf);
      for(i=0;buf[i] != ' ';i++);
      strncpy(name,buf,i);
@@ -144,7 +141,6 @@ int client_search(char *ptr,char *temp)
 		puts(temp);
 		return ++i;
 	 }
-	 puts(name);
     memset(buf,'\0',sizeof(buf));
     }
     fclose(fd);
@@ -166,14 +162,13 @@ int main(int argc,char **argv)
 	int fd,flag =0;
 	char buf[100];
 
-/*Check for no.of arguments received*/
-#if 1
+	/*Check for no.of arguments received*/
 	if(argc < 2)
 	{
 		printf("Usage : ./ser port_number ip_address\n");
 		return 0;
 	}
-#endif	
+
 	size = database_create();
 	if(size == 0)
 		return 0;
@@ -212,22 +207,7 @@ int main(int argc,char **argv)
 	/*Initialize size variable to be used later on*/
 	addr_size = sizeof serverStorage;
 
-#if 0
-	if((fd = open("output.txt",O_CREAT|O_WRONLY)) < 0)
-	{
-		perror("open::file");
-		return 0;
-	}
-#endif
-
 	while(1){
-#if 0
-	if(flag)
-	{
-	printf("value of j : %d\r\n",index);
-	printf("Expecting packet sequence : %d\r\n",!seq_num);
-	}
-#endif
 
     /* Try to receive any incoming UDP datagram. Address and port of 
       requesting client will be stored on serverStorage variable */
@@ -240,31 +220,15 @@ int main(int argc,char **argv)
 		continue;
 	}
 	
-#if 0
-	/*Check for the sequence number*/
-	if(seq_num == b.seq_num)
-	{
-		printf("Frame received\r\n");
-		printf("Packet received with incorrect sequence number/ Duplicate packet\r\n");
-		printPacket(&b,"received",nBytes);
-		b.pkt_type = ACK;
-		sendto(udpSocket,&b,sizeof(b),0,(struct sockaddr *)&serverStorage,addr_size);
-		printf("Response packet sent\r\n");
-		printPacket(&b,"sent",sizeof(b));
-		continue;
-	}
-	seq_num = b.seq_num;
-#endif
-     switch(rec.pkt_type)
+    switch(rec.pkt_type)
      {
         case REG:
 				printf("Regestration request packet received\r\n");
-				//printf("----%s\n",b.data);
 				printPacket(&rec,"received",nBytes);
 				/*Logic for the AUTHENTICATION*/
-                 for(i=0;i<size;i++)
-                 {
-                   if(!strcmp(rec.clientname,ptr[i]->name))
+                for(i=0;i<size;i++)
+                {
+                  if(!strcmp(rec.clientname,ptr[i]->name))
                    {
                       if(!strcmp(ptr[i]->password,rec.data))
                       {
@@ -276,22 +240,24 @@ int main(int argc,char **argv)
                    }
                  }
                  if(i == size)
+				 {
                     b.pkt_type = ERROR;
-				    b.destIP = rec.sourceIP;
-				    b.destPort = rec.sourcePort;
+				 }
+				 b.destIP = rec.sourceIP;
+				 b.destPort = rec.sourcePort;
 	
-					sendto(udpSocket,&b,sizeof(b),0,(struct sockaddr *)&serverStorage,addr_size);
-					printf("Response packet sent\r\n");
-					printPacket(&b,"sent",sizeof(b));
+			     sendto(udpSocket,&b,sizeof(b),0,(struct sockaddr *)&serverStorage,addr_size);
+			     printf("Response packet sent\r\n");
+			     printPacket(&b,"sent",sizeof(b));
 
-					for(j = 0;j<size;j++)
-					{
-						free(ptr[j]);
-					}
-					free(ptr);
-					if(i == size)
-						return 0;
-					break;
+			     for(j = 0;j<size;j++)
+				 {
+					free(ptr[j]);
+				 }
+				 free(ptr);
+				 if(i == size)
+					return 0;
+				 break;
 					 
 		case REQ:if((rec.sourcePort == client_info.port_no) && (strcmp(rec.clientname,client_info.name)))
 				 {
@@ -303,31 +269,31 @@ int main(int argc,char **argv)
     		   		printf("Response packet sent\r\n");
 					printPacket(&b,"sent",sizeof(b));
 					break;
-				 }
+				  }
 	
-				printf("Frame received\r\n");
-				printf("Data frame\r\n");
-				printPacket(&rec,"received",nBytes);
+				  printf("Frame received\r\n");
+				  printf("Data frame\r\n");
+				  printPacket(&rec,"received",nBytes);
 
-				retval = client_search(rec.data,buf);
-				if(retval == 0)
+				  retval = client_search(rec.data,buf);
+				  if(retval == 0)
 					b.pkt_type = ERROR;
-				else
-				{
+				  else
+				  {
                	 	b.pkt_type = REPLY;
 					strcpy(b.data,buf);
 					puts(b.data);
-				}
-    		   	 if(sendto(udpSocket,&b,sizeof(b),0,(struct sockaddr *)&serverStorage,addr_size) < 0)
-				 {
+				  }
+    		   	  if(sendto(udpSocket,&b,sizeof(b),0,(struct sockaddr *)&serverStorage,addr_size) < 0)
+				  {
 				 	perror("sendto::REQ");
 				 	close(fd);
 					return 0;
-				 }
+				  }
 
-				printPacket(&b,"sent",sizeof(b));
-				return 0;	
-               	break;
+				  printPacket(&b,"sent",sizeof(b));
+				  return 0;	
+               	  break;
                	
         default:printf("Frame received\r\n");
 				printf("Unknown\n");

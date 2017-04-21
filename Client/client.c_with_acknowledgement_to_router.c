@@ -19,7 +19,7 @@
 #define ERROR	0x05
 #define ACK		0X06
 
-#define TIME		4
+#define MAX_SEC		3
 #define MAX_SIZE	200
 
 struct basic{
@@ -145,11 +145,6 @@ int main(int argc,char **argv)
 				b.destIP = inet_addr(rec.data);
 				printf("Connecting to Router.......%s\r\n",argv[6]);
 				strcpy(b.clientname,argv[8]);
-				if(!(fgets(b.data,sizeof(b.data),fd)))
-                {
-                    perror("fgets");
-                    return 0;
-                }
 				server_addr.sin_family = AF_INET;
    		 		server_addr.sin_port = htons(atoi(argv[7]));
     			server_addr.sin_addr.s_addr = inet_addr(argv[6]);
@@ -171,7 +166,6 @@ int main(int argc,char **argv)
 					printf("File Transferred\n");
 					return 0;
 				}
-				sleep(TIME);
 				if((sendto(clientsfd,&b,sizeof(b),0,(struct sockaddr *)&server_addr,addr_size)) < 0)
                 {
                     perror("sendto::CONF");

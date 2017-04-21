@@ -43,7 +43,7 @@ void printPacket(struct basic *pkt,char *status,int no_of_bytes)
     printf("%s %-25s:%s\r\n",status,"data",pkt->data);
     printf("\r\n");
 }
-int main(){
+int main(int argc,char **argv){
   int udpSocket, nBytes;
   char buffer[1024];
   struct sockaddr_in serverAddr, clientAddr;
@@ -57,9 +57,15 @@ int main(){
       int n,j,k;
     char buf[50];
 	char temp[20];
-
+	int flag = 0;
     int size;
 
+	if(argc < 4)
+	{
+		printf("Usage : ./a.out router_port other_router_ip other_router_port\n");
+		return 0;
+	}
+	printf("Rouer IP....127.0.0.9\n");
     /*Reading the password database and forming a linkedlist*/
     FILE *fd = fopen("neighbour.txt","r");
     if(fd == NULL)
@@ -104,8 +110,8 @@ int main(){
 
   /*Configure settings in address struct*/
   serverAddr.sin_family = AF_INET;
-  serverAddr.sin_port = htons(37);
-  serverAddr.sin_addr.s_addr = inet_addr("127.0.0.7");
+  serverAddr.sin_port = htons(atoi(argv[1]));
+  serverAddr.sin_addr.s_addr = inet_addr("127.0.0.9");
   memset(serverAddr.sin_zero, '\0', sizeof serverAddr.sin_zero);  
 
   /*Bind socket with address struct*/
@@ -126,18 +132,37 @@ int main(){
       buffer[i] = toupper(buffer[i]);
 #endif
 	
-	ip = inet_addr(rec.data);
-	for(i=0;i<size;i++)
-	if(ip == ptr[i]->ip_address)
-		printf("Resolved\n");
-	}
 	/*Configure settings in address struct*/
     clientAddr.sin_family = AF_INET;
-    clientAddr.sin_port = htons(3002);
-    clientAddr.sin_addr.s_addr = inet_addr(b.data);
-    memset(clientAddr.sin_zero, '\0', sizeof clientAddr.sin_zero);
-
+    memset(clientAddr.sin_zero,'\0', sizeof clientAddr.sin_zero);
+	
+if(flag == 0)
+{
+//	ip = inet_addr(b.data);
+	for(i=0;i<size;i++)
+	{
+	if(b.destIP == ptr[i]->ip_address)
+		{
+			printf("Resolved\n");
+			break;
+		}
+	}
+	if(i == size)
+	{
+		printf("Not found passing to router2...\n");
+    	clientAddr.sin_port = htons(atoi(argv[3]));
+    	clientAddr.sin_addr.s_addr = inet_addr(argv[2]);
+	}
+	else
+	{
+	printf("%d====\n",i);
+    clientAddr.sin_port = htons(b.destPort);
+    clientAddr.sin_addr.s_addr = b.destIP;
+	}
+	flag = 1;
+}
   	addr_size = sizeof clientAddr;
+	printPacket(&b,"sent",nBytes);
     /*Send uppercase message back to client, using serverStorage as the address*/
     sendto(udpSocket,&b,sizeof(b),0,(struct sockaddr *)&clientAddr,addr_size);
   	
@@ -146,6 +171,7 @@ int main(){
 	
 	addr_size = sizeof serverStorage;
     sendto(udpSocket,&b,sizeof(b),0,(struct sockaddr *)&serverStorage,addr_size);
+	printPacket(&b,"sent-",nBytes);
 	}
 
   return 0;
